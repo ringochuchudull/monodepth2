@@ -20,7 +20,7 @@ from torchvision import transforms, datasets
 
 from monodepth2.networks import ResnetEncoder, DepthDecoder
 
-#from layers import disp_to_depth # Not being used atm
+from monodepth2.layers import disp_to_depth # Not being used atm
 
 from monodepth2.utils import download_model_if_doesnt_exist
 import cv2
@@ -88,8 +88,9 @@ def get_depthDispar(input_image, model=None, modelConfig=None, device='cpu'):
                                                        mode="bilinear",
                                                        align_corners=False)
 
-        print(disp_resized.shape)
         # Unload from GPU to CPU and put it back in numpy
+        scaled_disp, _ = disp_to_depth(disp, 0.1, 100)
+        scaled_disp = scaled_disp.cpu().numpy()
 
         disp_resized = disp_resized.cpu().numpy()
         disp_resized = disp_resized.squeeze()
@@ -97,54 +98,13 @@ def get_depthDispar(input_image, model=None, modelConfig=None, device='cpu'):
         # Covert to colorMap
         vmax = np.percentile(disp_resized, 95)
         normalizer = mpl.colors.Normalize(vmin=disp_resized.min(), vmax=vmax)
-        mapper = cm.ScalarMappable(norm=normalizer, cmap='viridis')
+        mapper = cm.ScalarMappable(norm=normalizer, cmap='inferno')
         colormapped_im = (mapper.to_rgba(disp_resized)[:, :, :3] * 255).astype(np.uint8)
 
-        return disp_resized, colormapped_im
+        im = pil.fromarray(colormapped_im)
+        #im.save('tokyoS.jpeg')
+        #print(disp_resized.shape, scaled_disp.shape, colormapped_im.shape)
+        return disp_resized, scaled_disp, colormapped_im, im
 
 if __name__ == '__main__':
-    this_img = cv2.imread('../data/MOT17Det/train/MOT17-13/img1/000001.jpg')
-    this_img2 = cv2.imread('../data/MOT17Det/train/MOT17-13/img1/000002.jpg')
-    this_img3 = cv2.imread('../data/MOT17Det/train/MOT17-13/img1/000003.jpg')
-    this_img4 = cv2.imread('../data/MOT17Det/train/MOT17-13/img1/000005.jpg')
-    this_img6 = cv2.imread('../data/MOT17Det/train/MOT17-13/img1/000006.jpg')
-    this_img7 = cv2.imread('../data/MOT17Det/train/MOT17-13/img1/000007.jpg')
-
-    encoder, depth_decoder, img_config, targetDevice = load_mondepthWeight(model_name='mono+stereo_640x192')
-
-    img1, colimg1 = get_depthDispar(input_image=this_img,
-                                    model=(encoder, depth_decoder),
-                                    modelConfig=img_config,
-                                    device=targetDevice)
-
-    img2, colimg2 = get_depthDispar(input_image=this_img2,
-                                    model=(encoder, depth_decoder),
-                                    modelConfig=img_config,
-                                    device=targetDevice)
-
-    img3, colimg3 = get_depthDispar(input_image=this_img3,
-                                    model=(encoder, depth_decoder),
-                                    modelConfig=img_config,
-                                    device=targetDevice)
-
-    get_depthDispar(input_image=this_img4,
-                    model=(encoder, depth_decoder),
-                    modelConfig=img_config,
-                    device=targetDevice)
-
-    get_depthDispar(input_image=this_img6,
-                    model=(encoder, depth_decoder),
-                    modelConfig=img_config,
-                    device=targetDevice)
-
-    get_depthDispar(input_image=this_img7,
-                    model=(encoder, depth_decoder),
-                    modelConfig=img_config,
-                    device=targetDevice)
-
-    for i in range(30):
-        get_depthDispar(input_image=this_img7,
-                        model=(encoder, depth_decoder),
-                        modelConfig=img_config,
-                        device=targetDevice)
-
+    pass
