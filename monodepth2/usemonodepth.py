@@ -106,5 +106,48 @@ def get_depthDispar(input_image, model=None, modelConfig=None, device='cpu'):
         #print(disp_resized.shape, scaled_disp.shape, colormapped_im.shape)
         return disp_resized, scaled_disp, colormapped_im, im
 
+def get_depthDispar_simplified(input_image, model=None, modelConfig=None, device='cpu'):
+
+    if model is None:
+        raise Exception('Model is empty')
+    if input_image is None:
+        raise Exception('Input to MonoDepth is empty')
+
+    input_image = pil.fromarray(input_image).convert('RGB')
+    encoder, depth_decoder = model
+
+    with torch.no_grad():
+        original_width, original_height = input_image.size
+        input_image = input_image.resize(modelConfig, pil.LANCZOS)
+        input_image = transforms.ToTensor()(input_image).unsqueeze(0)
+
+        input_image = input_image.to(device)
+        features = encoder(input_image)
+        outputs = depth_decoder(features)
+
+        disp = outputs[("disp", 0)]
+        disp_resized = torch.nn.functional.interpolate(disp,
+                                                       (original_height, original_width),
+                                                       mode="bilinear",
+                                                       align_corners=False)
+
+        # Unload from GPU to CPU and put it back in numpy
+        scaled_disp, _ = disp_to_depth(disp, 0.1, 100)
+        scaled_disp = scaled_disp.cpu().numpy()
+
+        disp_resized = disp_resized.cpu().numpy()
+        disp_resized = disp_resized.squeeze()
+
+        # Covert to colorMap
+        vmax = np.percentile(disp_resized, 95)
+        normalizer = mpl.colors.Normalize(vmin=disp_resized.min(), vmax=vmax)
+        mapper = cm.ScalarMappable(norm=normalizer, cmap='inferno')
+        colormapped_im = (mapper.to_rgba(disp_resized)[:, :, :3] * 255).astype(np.uint8)
+
+        im = pil.fromarray(colormapped_im)
+        #im.save('tokyoS.jpeg')
+        #print(disp_resized.shape, scaled_disp.shape, colormapped_im.shape)
+        return disp_resized, scaled_disp, colormapped_im, im
+
 if __name__ == '__main__':
     pass
