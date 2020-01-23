@@ -152,7 +152,7 @@ def get_depthdispar_simplified(input_image, model=None, modelConfig=None, device
 
         return disp_resized, scaled_disp, colormapped_im, im
 
-def only_get_disparity(input_image, model=None, modelConfig=None, device='cpu', channel_last=True):
+def only_get_disparity(input_image, model=None, modelConfig=None, device='cpu', isPil=True ,channel_last=True):
 
     if model is None:
         raise Exception('Model is empty')
@@ -162,9 +162,9 @@ def only_get_disparity(input_image, model=None, modelConfig=None, device='cpu', 
     if not channel_last:
         input_image = np.moveaxis(input_image, 0, 2)
     
-    print('Only get disparity ', input_image.shape)
-
-    input_image = pil.fromarray(input_image).convert('RGB')
+    if not isPil:
+        input_image = pil.fromarray(input_image).convert('RGB')
+    
     encoder, depth_decoder = model
 
     with torch.no_grad():
