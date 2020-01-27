@@ -267,7 +267,6 @@ def get_disparity_Torch_Tensor(input_image, model=None, modelConfig=None, device
                                                     mode="bilinear",
                                                     align_corners=False)
 
-        # Unload from GPU to CPU and put it back in numpy
 
         disp_resized = disp_resized.squeeze()
         disp_normalised = (disp_resized - torch.min(disp_resized))/(torch.max(disp_resized)-torch.min(disp_resized)) 

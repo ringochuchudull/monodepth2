@@ -19,3 +19,6 @@ dist
 monodepth2.egg-info
 
 *.jpg
+
+.ipynb_checkpoints
+.ipynb_checkpoints/*
